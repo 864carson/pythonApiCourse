@@ -1,44 +1,41 @@
-from typing import Optional
 from fastapi import FastAPI, Response, status, HTTPException
-from pydantic import BaseModel
-from random import randrange
+from app.models.todo_model import TodoModel
+import psycopg2
+from psycopg2.extras import RealDictCursor
+# import time
 
 app = FastAPI()
 
-# Define the Todo model with pydantic
-class TodoModel(BaseModel):
-    id: Optional[int] = None
-    title: str
-    description: Optional[str] = None
-    priority: Optional[int] = None
-    label: Optional[str] = None
-    parent: Optional[object] = None
-    # remind: Optional[datetime] = None
-    # due: Optional[datetime] = None
+while True:
+    try:
+        conn = psycopg2.connect(host='localhost', database='todos', user='postgres', password='car04soN!30$', cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print('database connection successful')
+        break
+    except Exception as error:
+        print('connecting to db failed')
+        print("Error: ", error)
+        # time.sleep(2)
 
-my_todos = [
-    { "id": 1, "title":"todo 1" },
-    { "id": 2, "title":"todo 2" }
-]
 
 def find_todo(id: int):
-    for i, t in enumerate(my_todos):
-        if t['id'] == id:
-            return i, t
-    return -1, None
+    cursor.execute("""SELECT * FROM public."Todos" WHERE id=%s """, (str(id)))
+    return cursor.fetchone()
 
 
 # path operation
 # async is optional here
 @app.get("/")
 async def get_todos():
-    return { "data": my_todos }
+    cursor.execute("""SELECT * FROM public."Todos" """)
+    todos = cursor.fetchall()
+    return { "data": todos }
 
 
 @app.get("/todos/{id}")
 async def get_todo(id: int):
-    (index, todo) = find_todo(id)
-    if index == -1:
+    todo = find_todo(id)
+    if not todo:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"Todo with id '{id}' was not found." )
@@ -48,33 +45,33 @@ async def get_todo(id: int):
 
 @app.post("/todos", status_code=status.HTTP_201_CREATED)
 async def post_todo(todo: TodoModel):
-    todo_dict = todo.model_dump()
-    todo_dict['id'] = randrange(0, 1000000000)
-    my_todos.append(todo_dict)
-    return { "data": todo_dict }
+    cursor.execute("""INSERT INTO public."Todos" (title, description) VALUES (%s, %s) RETURNING * """, (todo.title, todo.description))
+    new_todo = cursor.fetchone()
+    conn.commit()
+    return { "data": new_todo }
 
 
 @app.put("/todos/{id}", status_code=status.HTTP_202_ACCEPTED)
 async def put_todo(id: int, todo: TodoModel):
-    (index, orig_todo) = find_todo(id)
-    if index == -1:
+    cursor.execute("""UPDATE public."Todos" SET title=%s, description=%s WHERE id=%s RETURNING * """, (todo.title, todo.description, str(id)))
+    updated_todo = cursor.fetchone()
+    conn.commit()
+    if not updated_todo:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"Todo with id '{id}' was not found." )
 
-    todo_dict = todo.model_dump()
-    todo_dict['id'] = id
-    my_todos[index] = todo_dict
-    return { "data": todo_dict }
+    return { "data": updated_todo }
 
 
 @app.delete("/todos/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_todo(id: int):
-    (index, todo) = find_todo(id)
-    if index == -1:
+    cursor.execute("""DELETE FROM public."Todos" WHERE id=%s RETURNING * """, (str(id)))
+    deleted_todo = cursor.fetchone()
+    conn.commit()
+    if not deleted_todo:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"Todo with id '{id}' was not found." )
 
-    my_todos.pop(index)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

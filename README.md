@@ -5,6 +5,7 @@ Using:
 * FastAPI
 * pydantic
 * PostgreSQL
+* Psycopg
 * SQLAlchemy
 
 Run:
