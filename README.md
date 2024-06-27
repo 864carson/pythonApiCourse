@@ -1,12 +1,14 @@
 # pythonApiCourse
 Python v3.12.4
 
-Using:
+## Using:
 * FastAPI
 * pydantic
-* PostgreSQL
-* Psycopg
-* SQLAlchemy
 
-Run:
+* PostgreSQL
+  * Psycopg (PostgreSQL driver)
+  * SQLAlchemy (ORM)
+  * Alembic (DB Migrations)
+
+## Run:
 * uvicorn main:app --reload

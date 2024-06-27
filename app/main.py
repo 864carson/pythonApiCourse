@@ -1,77 +1,92 @@
-from fastapi import FastAPI, Response, status, HTTPException
-from app.models.todo_model import TodoModel
-import psycopg2
-from psycopg2.extras import RealDictCursor
-# import time
+from fastapi import Depends, FastAPI, Response, status, HTTPException
+from app import database
+from app.models.todo import Todo
+from app.schemas.todo import TodoSchemaCreate, TodoSchemaResponse
+from .database import engine, get_db
+from sqlalchemy.orm import Session
+
+# Create any tables that don't exist
+database.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-while True:
-    try:
-        conn = psycopg2.connect(host='localhost', database='todos', user='postgres', password='car04soN!30$', cursor_factory=RealDictCursor)
-        cursor = conn.cursor()
-        print('database connection successful')
-        break
-    except Exception as error:
-        print('connecting to db failed')
-        print("Error: ", error)
-        # time.sleep(2)
 
-
-def find_todo(id: int):
-    cursor.execute("""SELECT * FROM public."Todos" WHERE id=%s """, (str(id)))
-    return cursor.fetchone()
+def find_todo(id: int, db: Session) -> Todo:
+    return db.query(Todo).get(id)
 
 
 # path operation
 # async is optional here
-@app.get("/")
-async def get_todos():
-    cursor.execute("""SELECT * FROM public."Todos" """)
-    todos = cursor.fetchall()
-    return { "data": todos }
+@app.get(
+        "/",
+        response_model=list[TodoSchemaResponse],
+        response_model_exclude_unset=True,
+        response_model_exclude_none=True)
+async def get_todos(db: Session = Depends(get_db)) -> list[TodoSchemaResponse]:
+    todos = db.query(Todo).all()
+    return todos
 
 
-@app.get("/todos/{id}")
-async def get_todo(id: int):
-    todo = find_todo(id)
+@app.get(
+        "/todos/{id}",
+        response_model=TodoSchemaResponse,
+        response_model_exclude_unset=True,
+        response_model_exclude_none=True)
+async def get_todo(id: int, db: Session = Depends(get_db)) -> TodoSchemaResponse:
+    todo = find_todo(id, db)
+    if not todo:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"Todo with id '{id}' was not found." )
+    return todo
+
+
+@app.post(
+        "/todos",
+        status_code=status.HTTP_201_CREATED,
+        response_model=TodoSchemaResponse,
+        response_model_exclude_unset=True,
+        response_model_exclude_none=True)
+async def post_todo(todo: TodoSchemaCreate, db: Session = Depends(get_db)) -> TodoSchemaResponse:
+    new_todo = Todo(**todo.model_dump())
+    db.add(new_todo)
+    db.commit()
+    db.refresh(new_todo)
+    return new_todo
+
+
+@app.put(
+        "/todos/{id}",
+        status_code=status.HTTP_202_ACCEPTED,
+        response_model=TodoSchemaResponse,
+        response_model_exclude_unset=True,
+        response_model_exclude_none=True)
+async def put_todo(id: int, todo: TodoSchemaCreate, db: Session = Depends(get_db)) -> TodoSchemaResponse:
+    update_query = db.query(Todo).filter(id == id)
+    todo = update_query.first()
     if not todo:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"Todo with id '{id}' was not found." )
 
-    return { "data": todo }
+    update_query.update(todo.dict())
+    db.commit()
+
+    return update_query.first()
 
 
-@app.post("/todos", status_code=status.HTTP_201_CREATED)
-async def post_todo(todo: TodoModel):
-    cursor.execute("""INSERT INTO public."Todos" (title, description) VALUES (%s, %s) RETURNING * """, (todo.title, todo.description))
-    new_todo = cursor.fetchone()
-    conn.commit()
-    return { "data": new_todo }
-
-
-@app.put("/todos/{id}", status_code=status.HTTP_202_ACCEPTED)
-async def put_todo(id: int, todo: TodoModel):
-    cursor.execute("""UPDATE public."Todos" SET title=%s, description=%s WHERE id=%s RETURNING * """, (todo.title, todo.description, str(id)))
-    updated_todo = cursor.fetchone()
-    conn.commit()
-    if not updated_todo:
+@app.delete(
+        "/todos/{id}",
+        status_code=status.HTTP_204_NO_CONTENT,
+        response_model=None)
+async def delete_todo(id: int, db: Session = Depends(get_db)) -> None:
+    todo = find_todo(id, db)
+    if not todo:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"Todo with id '{id}' was not found." )
 
-    return { "data": updated_todo }
-
-
-@app.delete("/todos/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_todo(id: int):
-    cursor.execute("""DELETE FROM public."Todos" WHERE id=%s RETURNING * """, (str(id)))
-    deleted_todo = cursor.fetchone()
-    conn.commit()
-    if not deleted_todo:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"Todo with id '{id}' was not found." )
+    todo.delete(synchronize_session=False)
+    db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
