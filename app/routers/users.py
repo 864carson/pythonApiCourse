@@ -1,5 +1,5 @@
 from fastapi import Depends, status, HTTPException, APIRouter
-from app import utils
+from app import oauth2, utils
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserSchemaCreate, UserSchemaResponse
@@ -7,12 +7,16 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/users", tags=["User Endpoints"])
 
+# Header: Authorization = "Bearer xxxx"
 @router.get(
         "/",
         response_model=list[UserSchemaResponse],
         response_model_exclude_unset=True,
         response_model_exclude_none=True)
-async def get_users(db: Session = Depends(get_db)) -> list[UserSchemaResponse]:
+async def get_users(
+        db: Session = Depends(get_db),
+        current_user_id: int = Depends(oauth2.get_current_user)
+    ) -> list[UserSchemaResponse]:
     users = db.query(User).all()
     return users
 
@@ -21,7 +25,11 @@ async def get_users(db: Session = Depends(get_db)) -> list[UserSchemaResponse]:
         response_model=UserSchemaResponse,
         response_model_exclude_unset=True,
         response_model_exclude_none=True)
-async def get_user(id: int, db: Session = Depends(get_db)) -> UserSchemaResponse:
+async def get_user(
+        id: int,
+        db: Session = Depends(get_db),
+        current_user_id: int = Depends(oauth2.get_current_user)
+    ) -> UserSchemaResponse:
     user = db.query(User).filter(User.id == id).first()
     if not user:
         raise HTTPException(
@@ -37,7 +45,11 @@ async def get_user(id: int, db: Session = Depends(get_db)) -> UserSchemaResponse
         response_model=UserSchemaResponse,
         response_model_exclude_unset=True,
         response_model_exclude_none=True)
-async def post_user(user: UserSchemaCreate, db: Session = Depends(get_db)) -> UserSchemaResponse:
+async def post_user(
+        user: UserSchemaCreate,
+        db: Session = Depends(get_db),
+        current_user_id: int = Depends(oauth2.get_current_user)
+    ) -> UserSchemaResponse:
     # Hash the password
     user.password = utils.hash(user.password)
 
