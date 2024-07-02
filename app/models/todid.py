@@ -3,9 +3,9 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 from app.database import Base
 
 
-# Define the Todo model with SQLAlchemy
-class Todo(Base):
-    __tablename__ = "Todos"
+# Define the ToDid model with SQLAlchemy
+class Todid(Base):
+    __tablename__ = "todids"
 
     id = Column(Integer, primary_key=True, nullable=False)
     title = Column(String(length=512), nullable=False, index=True)

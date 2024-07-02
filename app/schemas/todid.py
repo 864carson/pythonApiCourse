@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 
-class TodoSchemaBase(BaseModel):
+class TodidSchemaBase(BaseModel):
     title: str
     description: Optional[str] | None = None
 
@@ -10,11 +10,11 @@ class TodoSchemaBase(BaseModel):
         orm_mode: True
 
 
-class TodoSchemaCreate(TodoSchemaBase):
+class TodidSchemaCreate(TodidSchemaBase):
     pass
 
 
-class TodoSchemaResponse(TodoSchemaBase):
+class TodidSchemaResponse(TodidSchemaBase):
     id: int
     createdOn: datetime
     updatedOn: datetime | None = None

@@ -2,12 +2,16 @@
     "cSpell.words": [
         "autoflush",
         "fastapi",
+        "passlib",
         "Psycopg",
         "pydantic",
         "sessionmaker",
         "sqlalchemy",
         "sqltypes",
+        "todid",
+        "todids",
         "todos",
-        "uvicorn"
+        "uvicorn",
+        "VENV"
     ]
 }

@@ -11,4 +11,21 @@ Python v3.12.4
   * Alembic (DB Migrations)
 
 ## Run:
-* uvicorn main:app --reload
+* uvicorn app.main:app --reload
+
+## VENV
+### Windows
+- Create virtual env: py -3 -m venv <name>
+- Activate virtual env in terminal: <name>\Scripts\activate
+
+### Mac
+- Create virtual env: python3 -m venv <name>
+- Activate virtual env in terminal: source <name>/bin/activate
+
+
+## Install
+* FastAPI
+* pydantic
+* psycopg2
+* SQLAlchemy
+* Alembic

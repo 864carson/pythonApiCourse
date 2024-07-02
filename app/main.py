@@ -1,9 +1,12 @@
 from fastapi import Depends, FastAPI, Response, status, HTTPException
-from app import database
-from app.models.todo import Todo
-from app.schemas.todo import TodoSchemaCreate, TodoSchemaResponse
+from app import database, utils
+from app.models.todid import Todid
+from app.models.user import User
+from app.schemas.todid import TodidSchemaCreate, TodidSchemaResponse
+from app.schemas.user import UserSchemaCreate, UserSchemaResponse
 from .database import engine, get_db
 from sqlalchemy.orm import Session
+
 
 # Create any tables that don't exist
 database.Base.metadata.create_all(bind=engine)
@@ -11,82 +14,109 @@ database.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
-def find_todo(id: int, db: Session) -> Todo:
-    return db.query(Todo).get(id)
+def find_todid(id: int, db: Session) -> Todid:
+    return db.query(Todid).get(id)
 
 
 # path operation
 # async is optional here
 @app.get(
         "/",
-        response_model=list[TodoSchemaResponse],
+        response_model=list[TodidSchemaResponse],
         response_model_exclude_unset=True,
         response_model_exclude_none=True)
-async def get_todos(db: Session = Depends(get_db)) -> list[TodoSchemaResponse]:
-    todos = db.query(Todo).all()
-    return todos
+async def get_todids(db: Session = Depends(get_db)) -> list[TodidSchemaResponse]:
+    todids = db.query(Todid).all()
+    return todids
 
 
 @app.get(
-        "/todos/{id}",
-        response_model=TodoSchemaResponse,
+        "/todids/{id}",
+        response_model=TodidSchemaResponse,
         response_model_exclude_unset=True,
         response_model_exclude_none=True)
-async def get_todo(id: int, db: Session = Depends(get_db)) -> TodoSchemaResponse:
-    todo = find_todo(id, db)
-    if not todo:
+async def get_todid(id: int, db: Session = Depends(get_db)) -> TodidSchemaResponse:
+    todid = find_todid(id, db)
+    if not todid:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail=f"Todo with id '{id}' was not found." )
-    return todo
+            detail=f"ToDid with id '{id}' was not found." )
+    return todid
 
 
 @app.post(
-        "/todos",
+        "/todids",
         status_code=status.HTTP_201_CREATED,
-        response_model=TodoSchemaResponse,
+        response_model=TodidSchemaResponse,
         response_model_exclude_unset=True,
         response_model_exclude_none=True)
-async def post_todo(todo: TodoSchemaCreate, db: Session = Depends(get_db)) -> TodoSchemaResponse:
-    new_todo = Todo(**todo.model_dump())
-    db.add(new_todo)
+async def post_todid(todid: TodidSchemaCreate, db: Session = Depends(get_db)) -> TodidSchemaResponse:
+    new_todid = Todid(**todid.model_dump())
+    db.add(new_todid)
     db.commit()
-    db.refresh(new_todo)
-    return new_todo
+    db.refresh(new_todid)
+    return new_todid
 
 
 @app.put(
-        "/todos/{id}",
+        "/todids/{id}",
         status_code=status.HTTP_202_ACCEPTED,
-        response_model=TodoSchemaResponse,
+        response_model=TodidSchemaResponse,
         response_model_exclude_unset=True,
         response_model_exclude_none=True)
-async def put_todo(id: int, todo: TodoSchemaCreate, db: Session = Depends(get_db)) -> TodoSchemaResponse:
-    update_query = db.query(Todo).filter(id == id)
-    todo = update_query.first()
-    if not todo:
+async def put_todid(id: int, todid: TodidSchemaCreate, db: Session = Depends(get_db)) -> TodidSchemaResponse:
+    update_query = db.query(Todid).filter(id == id)
+    todid = update_query.first()
+    if not todid:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail=f"Todo with id '{id}' was not found." )
+            detail=f"ToDid with id '{id}' was not found." )
 
-    update_query.update(todo.dict())
+    update_query.update(todid.dict())
     db.commit()
 
     return update_query.first()
 
 
 @app.delete(
-        "/todos/{id}",
+        "/todids/{id}",
         status_code=status.HTTP_204_NO_CONTENT,
         response_model=None)
-async def delete_todo(id: int, db: Session = Depends(get_db)) -> None:
-    todo = find_todo(id, db)
-    if not todo:
+async def delete_todid(id: int, db: Session = Depends(get_db)) -> None:
+    todid = find_todid(id, db)
+    if not todid:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail=f"Todo with id '{id}' was not found." )
+            detail=f"ToDid with id '{id}' was not found." )
 
-    todo.delete(synchronize_session=False)
+    todid.delete(synchronize_session=False)
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.get(
+        "/users",
+        response_model=list[UserSchemaResponse],
+        response_model_exclude_unset=True,
+        response_model_exclude_none=True)
+async def get_users(db: Session = Depends(get_db)) -> list[UserSchemaResponse]:
+    users = db.query(User).all()
+    return users
+
+
+@app.post(
+        "/users",
+        status_code=status.HTTP_201_CREATED,
+        response_model=UserSchemaResponse,
+        response_model_exclude_unset=True,
+        response_model_exclude_none=True)
+async def post_user(user: UserSchemaCreate, db: Session = Depends(get_db)) -> UserSchemaResponse:
+    # Hash the password
+    user.password = utils.hash(user.password)
+
+    new_user = User(**user.model_dump())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
