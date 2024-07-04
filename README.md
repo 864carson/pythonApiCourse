@@ -1,6 +1,7 @@
 # pythonApiCourse
 Python v3.12.4
 
+
 ## Using:
 * FastAPI
 * pydantic
@@ -10,8 +11,10 @@ Python v3.12.4
   * SQLAlchemy (ORM)
   * Alembic (DB Migrations)
 
+
 ## Run:
 * uvicorn app.main:app --reload
+
 
 ## VENV
 ### Windows
@@ -29,3 +32,8 @@ Python v3.12.4
 * psycopg2
 * SQLAlchemy
 * Alembic
+
+
+## Misc
+### Generate 128bit string for encryption
+`openssl rand -hex 128`

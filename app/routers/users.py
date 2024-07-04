@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/users", tags=["User Endpoints"])
 
-# Header: Authorization = "Bearer xxxx"
+
 @router.get(
         "/",
         response_model=list[UserSchemaResponse],
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/users", tags=["User Endpoints"])
         response_model_exclude_none=True)
 async def get_users(
         db: Session = Depends(get_db),
-        current_user_id: int = Depends(oauth2.get_current_user)
+        current_user: int = Depends(oauth2.get_current_user)
     ) -> list[UserSchemaResponse]:
     users = db.query(User).all()
     return users
@@ -28,7 +28,7 @@ async def get_users(
 async def get_user(
         id: int,
         db: Session = Depends(get_db),
-        current_user_id: int = Depends(oauth2.get_current_user)
+        current_user: int = Depends(oauth2.get_current_user)
     ) -> UserSchemaResponse:
     user = db.query(User).filter(User.id == id).first()
     if not user:
@@ -48,7 +48,7 @@ async def get_user(
 async def post_user(
         user: UserSchemaCreate,
         db: Session = Depends(get_db),
-        current_user_id: int = Depends(oauth2.get_current_user)
+        current_user: int = Depends(oauth2.get_current_user)
     ) -> UserSchemaResponse:
     # Hash the password
     user.password = utils.hash(user.password)

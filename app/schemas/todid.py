@@ -1,6 +1,8 @@
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
+from app.schemas.user import UserSchemaResponse
+
 
 class TodidSchemaBase(BaseModel):
     title: str
@@ -16,5 +18,6 @@ class TodidSchemaCreate(TodidSchemaBase):
 
 class TodidSchemaResponse(TodidSchemaBase):
     id: int
+    createdByName: UserSchemaResponse
     createdOn: datetime
     updatedOn: datetime | None = None
