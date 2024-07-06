@@ -37,3 +37,5 @@ Python v3.12.4
 ## Misc
 ### Generate 128bit string for encryption
 `openssl rand -hex 128`
+
+Video @ ~8.5 hour mark

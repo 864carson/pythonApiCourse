@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import Depends, Response, status, HTTPException, APIRouter
 from app import oauth2
 from app.database import get_db
@@ -15,9 +16,12 @@ router = APIRouter(prefix="/todids", tags=["ToDid Endpoints"])
         response_model_exclude_none=True)
 async def get_todids(
         db: Session = Depends(get_db),
-        current_user: int = Depends(oauth2.get_current_user)
+        current_user: int = Depends(oauth2.get_current_user),
+        limit: int = 10,
+        offset: int = 0,
+        search: Optional[str] = ""
     ) -> list[TodidSchemaResponse]:
-    todids = db.query(Todid).all()
+    todids = db.query(Todid).filter(Todid.title.contains(search)).offset(offset).limit(limit).all()
     return todids
 
 
