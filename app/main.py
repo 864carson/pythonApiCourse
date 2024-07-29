@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app import database
+from .config import settings
 from app.routers import auth, health, todids, users
 from .database import engine
 

@@ -1,19 +1,20 @@
+from app.config import settings
+from app.database import get_db
+from app.models.user import User
+from app.schemas.auth import TokenData
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, UTC
-from app.database import get_db
-from app.models.user import User
-from app.schemas.auth import TokenData
 from sqlalchemy.orm import Session
 
 # Creates an instance of the `OAuth2PasswordBearer` class from the `fastapi.security` module. This instance
 # represents a scheme for handling OAuth2 password flow authentication in FastAPI.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-SECRET_KEY = "e5edd906b79d913ad9698b554da178ea55d63db35765941901aeb8707a738b9ce07bc7ad3e43412197462a800f1920cbdba8da79d63ca4a191aea0928bed6a1dce7b1f3b73bb3efabd144ac7cc281a5ad0a6979ebf79d9085eef6e2292587a97172bb0b3c003a74180c9715b062b40c5abc482981bcee288b6c0baa209a9ea7c"
+SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 240
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expiration
 
 
 def create_access_token(data: dict):

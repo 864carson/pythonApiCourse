@@ -1,8 +1,9 @@
+from app.config import settings
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = 'postgresql://postgres:car04soN!30$@localhost/ToDid'
+SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.db_username}:{settings.db_password}@{settings.db_hostname}:{settings.db_port}/{settings.db_database}'
 
 # Creates a database engine using SQLAlchemy. The `create_engine` function is used to create an engine object that
 # represents a connection to the database specified in the `SQLALCHEMY_DATABASE_URL`. This engine will be used to
