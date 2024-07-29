@@ -16,6 +16,16 @@ router = APIRouter(tags=["Authentication Endpoints"])
 )
 async def login(credentials: OAuth2PasswordRequestForm = Depends(),
                 db: Session = Depends(get_db)):
+    """
+    Logs in a user with the provided credentials.
+
+    :param credentials: The information from the login form.
+    :type credentials: OAuth2PasswordRequestForm
+
+    :return: A JSON Web Token (JWT) that has been encoded using the data provided, a secret key,
+    and a specified algorithm.
+    """
+
     user = db.query(User).filter(User.email == credentials.username).first()
     if not user:
         raise HTTPException(
