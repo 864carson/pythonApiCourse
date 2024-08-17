@@ -6,6 +6,7 @@ Python v3.12.4
 * FastAPI
 * pydantic
 
+
 * PostgreSQL
   * Psycopg (PostgreSQL driver)
   * SQLAlchemy (ORM)
